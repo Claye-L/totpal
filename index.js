@@ -5,4 +5,6 @@ const app = express();
 
 app.get("/", (req,res) =>   res.send("hello world"));
 
-app.listen(80, console.log("listening on 80"));
+app.use(express.static(path.join(__dirname,'public')));
+
+app.listen(5000, console.log("listening on 5000"));
