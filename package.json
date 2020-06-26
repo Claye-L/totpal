@@ -1,0 +1,22 @@
+{
+  "name": "totpal",
+  "version": "1.0.0",
+  "description": "a website to play two of these people are lying",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Claye-L/totpal.git"
+  },
+  "author": "CLaye_L",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Claye-L/totpal/issues"
+  },
+  "homepage": "https://github.com/Claye-L/totpal#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
