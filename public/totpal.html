@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<body>
+    <h1>Title omegalul</h1>
+    <div>
+        <div>
+            <label>connect to the server</label>
+            <input type="text" id="usernameInput"/>
+            <button onclick="connect()">connect</button>
+            <label id="connectResultLabel"></label>
+        </div>
+        <div>
+            <label>send a message to the server</label>
+            <input type="text" id="textInput"/>
+            <button onclick="sendMessage()">send</button>
+        </div>
+        <div>
+            <label id="userlistLabel"></label>
+        </div>
+    </div>
+</body>
+
+<script>
+    let userlist = [];
+    let username = "";
+
+    let wsAdress = "ws://" + window.location.hostname +  (window.location.port ? ":" + window.location.port : "") + "/ws";
+    var gameSocket = null;
+    function sendMessage() {
+        let msg = document.getElementById("textInput").value;
+        gameSocket.send(msg);
+    };
+
+    function connect() {
+        username = document.getElementById("usernameInput").value;
+        gameSocket = new WebSocket(wsAdress);
+        gameSocket.onmessage = handleMessage;
+        gameSocket.onopen = function(e) {
+            gameSocket.send(JSON.stringify({action: "connect", data: {username : username}}));
+        };
+    };
+
+    handleMessage = function (ev) {
+        console.log(ev.data);
+        let msg = JSON.parse(ev.data);
+        if(msg.action == "connect") {
+            if(msg.data.success) {
+                document.getElementById("connectResultLabel").innerText = "success";
+            }
+            else {
+                document.getElementById("connectResultLabel").innerText = "error: " + msg.data.reason;
+            }
+        }
+        else if(msg.action == "users") {
+            userlist = msg.data;
+            document.getElementById("userlistLabel").innerText = userlist.reduce((prev, ele) => prev + "\n" + ele);
+        }
+    }
+</script>
