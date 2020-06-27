@@ -20,6 +20,7 @@ app.use(express.static(path.join(__dirname,'public')));
 app.listen(5000, console.log("listening on 5000"));
 
 let users = {};
+let gamestate = {state: "stop", guesser: null, tellers : []};
 
 function handleMessage(ws,ev) {
     let msg = JSON.parse(ev);
@@ -35,10 +36,45 @@ function handleMessage(ws,ev) {
         users[msg.data.username] = {username: msg.data.username, ws : ws};
         ws.on("close", (ev) => {
            delete users[msg.data.username];
+           removeUserFromGame();
            notifyUsersChanged();
         });
         ws.send(JSON.stringify({action: "connect", data: {success : true}}));
         notifyUsersChanged();
+    }
+    if(msg.action == "join") {
+        //check user exists
+        if(msg.username == undefined || users[msg.username] == undefined) {
+            ws.send(JSON.stringify({action: "join", data:{success: false, reason : "must connect as a user to join the game"}}))
+            return;
+        }
+        if(gamestate.state != "stop") {
+            ws.send(JSON.stringify({action: "join", data: {success : false, reason : "can not change players while game is running"}}));
+            return;
+        }
+        //user is not in game -> add em
+        //user is already in game -> remove em to the new role
+        if(gamestate.guesser == msg.username) {
+            gamestate.guesser = null;
+        }
+        let teller = gamestate.tellers.filter(x => x.username == msg.username);
+        if(teller == false) {
+            let pos = gamestate.tellers.indexOf(teller[0]);
+            gamestate.tellers.splice(pos,1);
+        }
+        if(msg.data.role == "guesser") {
+            if(gamestate.guesser != null) {
+                ws.send(JSON.stringify({action: "join", data : {success : "false", reason: "can only be one guesser"}}))
+                return;
+            }
+            else {
+                gamestate.guesser = msg.username;
+            }
+        }
+        else if(msg.data.role == "teller") {
+            gamestate.tellers.push({username : msg.username});
+        }
+        notifyGameStateChanged();
     }
 }
 
@@ -48,4 +84,19 @@ function notifyUsersChanged() {
        let ws = users[username].ws;
        ws.send(JSON.stringify({action : "users", data : allUsernames}));
     }
+}
+
+function notifyGameStateChanged() {
+    let allUsernames = Object.keys(users);
+    for(var username in users) {
+       let ws = users[username].ws;
+       ws.send(JSON.stringify(gamestate));
+    }
+}
+
+function removeUserFromGame(username) {
+    notifyGameStateChanged();
+}
+function checkGamestate() {
+    //check if game need to be reset to stopped state
 }
