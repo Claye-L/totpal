@@ -54,14 +54,7 @@ function handleMessage(ws,ev) {
         }
         //user is not in game -> add em
         //user is already in game -> remove em to the new role
-        if(gamestate.guesser == msg.username) {
-            gamestate.guesser = null;
-        }
-        let teller = gamestate.tellers.filter(x => x.username == msg.username);
-        if(teller == false) {
-            let pos = gamestate.tellers.indexOf(teller[0]);
-            gamestate.tellers.splice(pos,1);
-        }
+        removeUserFromGame();
         if(msg.data.role == "guesser") {
             if(gamestate.guesser != null) {
                 ws.send(JSON.stringify({action: "join", data : {success : "false", reason: "can only be one guesser"}}))
@@ -75,6 +68,10 @@ function handleMessage(ws,ev) {
             gamestate.tellers.push({username : msg.username});
         }
         notifyGameStateChanged();
+    }
+    if(msg.action == "gamestate") {
+        ws.send(JSON.stringify({action: "gamestate", data :gamestate}));
+        return;
     }
 }
 
@@ -90,13 +87,32 @@ function notifyGameStateChanged() {
     let allUsernames = Object.keys(users);
     for(var username in users) {
        let ws = users[username].ws;
-       ws.send(JSON.stringify(gamestate));
+       ws.send(JSON.stringify({action: "gamestate", data :gamestate}));
     }
 }
 
 function removeUserFromGame(username) {
+    if(gamestate.guesser == username) {
+        gamestate.guesser = null;
+    }
+    let teller = gamestate.tellers.filter(x => x.username == msg.username);
+    if(teller == false) {
+        let pos = gamestate.tellers.indexOf(teller[0]);
+        gamestate.tellers.splice(pos,1);
+    }
+    checkGamestate();
     notifyGameStateChanged();
 }
 function checkGamestate() {
     //check if game need to be reset to stopped state
+    if(gamestate.state == "start" || gamestate.state == "waiting") {
+        if(gamestate.guesser == null || gamestate.tellers.length < 2) {
+            gamestate.state = "stop";
+            return;
+        }
+    }
+}
+function setToWaitingState() {
+    gamestate.action = "waiting";
+    gamestate.tellers.forEach(p => delete p.page);
 }

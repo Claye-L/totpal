@@ -2,25 +2,45 @@
 <body>
     <h1>Title omegalul</h1>
     <div class="grid">
-        <div>
+        <div class="connectBox">
             <label>connect to the server</label>
             <input type="text" id="usernameInput"/>
             <button onclick="connect()">connect</button>
             <label id="connectResultLabel"></label>
         </div>
-        <div>
-            <label>send a message to the server</label>
-            <input type="text" id="textInput"/>
-            <button onclick="sendMessage()">send</button>
-        </div>
-        <div>
+        <div class="userList">
             <label id="userlistLabel"></label>
+        </div>
+        <div class="gamestate">
+            <label id="gamestateLabel"></label>
+            <label id="guesserLabel"></label>
+            <label id="tellersLabel"></label>
         </div>
     </div>
 </body>
 <style>
     .grid{
-        display: flex;
+        display: grid;
+        grid-template-rows: repeat(3, 1fr);
+    }
+    .hidden {
+        display: none;
+    }
+    .connectBox {
+        grid-row: 1;
+        grid-column: 1;
+        background-color: green;
+    }
+    .userList {
+        grid-row: 1;
+        grid-column: 3;
+        background-color: blue;
+    }
+    .gamestate {
+        display:initial;
+        grid-row: 2;
+        grid-column: 1;
+        background-color: red;
     }
 </style>
 <script>
@@ -29,10 +49,6 @@
 
     let wsAdress = "ws://" + window.location.hostname +  (window.location.port ? ":" + window.location.port : "") + "/ws";
     var gameSocket = null;
-    function sendMessage() {
-        let msg = document.getElementById("textInput").value;
-        gameSocket.send(msg);
-    };
 
     function connect() {
         username = document.getElementById("usernameInput").value;
@@ -40,6 +56,7 @@
         gameSocket.onmessage = handleMessage;
         gameSocket.onopen = function(e) {
             gameSocket.send(JSON.stringify({action: "connect", data: {username : username}}));
+            gameSocket.send(JSON.stringify({action:"gamestate"}));
         };
     };
 
@@ -49,6 +66,7 @@
         if(msg.action == "connect") {
             if(msg.data.success) {
                 document.getElementById("connectResultLabel").innerText = "success";
+                document.getElementsByClassName("connectBox")[0].classList.add("hidden");
             }
             else {
                 document.getElementById("connectResultLabel").innerText = "error: " + msg.data.reason;
@@ -58,5 +76,14 @@
             userlist = msg.data;
             document.getElementById("userlistLabel").innerText = userlist.reduce((prev, ele) => prev + "\n" + ele);
         }
+        else if (msg.action == "gamestate") {
+            updateGameState(msg.data);
+        }
+    }
+    function updateGameState(gamestate) {
+        document.getElementById("gamestateLabel").innerText = "game state: " + gamestate.state;
+        document.getElementById("guesserLabel").innerText = "guesser: " + gamestate.guesser;
+        document.getElementById("telllersLabel").innerText = "tellers: " + gamestate.tellers.reduce((prev, ele) => prev + "\n" + ele.username, "");
+        //todo input logic
     }
 </script>
