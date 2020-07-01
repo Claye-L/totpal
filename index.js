@@ -54,10 +54,10 @@ function handleMessage(ws,ev) {
         }
         //user is not in game -> add em
         //user is already in game -> remove em to the new role
-        removeUserFromGame();
+        removeUserFromGame(msg.username);
         if(msg.data.role == "guesser") {
             if(gamestate.guesser != null) {
-                ws.send(JSON.stringify({action: "join", data : {success : "false", reason: "can only be one guesser"}}))
+                ws.send(JSON.stringify({action: "join", data : {success : false, reason: "can only be one guesser"}}))
                 return;
             }
             else {
@@ -95,9 +95,9 @@ function removeUserFromGame(username) {
     if(gamestate.guesser == username) {
         gamestate.guesser = null;
     }
-    let teller = gamestate.tellers.filter(x => x.username == msg.username);
-    if(teller == false) {
-        let pos = gamestate.tellers.indexOf(teller[0]);
+    let teller = gamestate.tellers.find(x => x.username == username);
+    if(teller != undefined) {
+        let pos = gamestate.tellers.indexOf(teller);
         gamestate.tellers.splice(pos,1);
     }
     checkGamestate();

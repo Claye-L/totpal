@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <body>
-    <h1>Title omegalul</h1>
+    <h1>Two of these people are lying (totpal)</h1>
     <div class="grid">
         <div class="connectBox">
             <label>connect to the server</label>
@@ -8,7 +8,9 @@
             <button onclick="connect()">connect</button>
             <label id="connectResultLabel"></label>
         </div>
+		<!-- TODO add a "connected as username box" -->
         <div class="userList">
+			<label>user list:</label>
             <label id="userlistLabel"></label>
         </div>
         <div class="gamestate">
@@ -16,6 +18,11 @@
             <label id="guesserLabel"></label>
             <label id="tellersLabel"></label>
         </div>
+		<div class="joincontrols">
+			<label>join the game:</label>
+			<button id="joinGuesserBtn" onclick="joinGame('guesser')">join as guesser</button>
+			<button id="joinTellerBtn" onclick="joinGame('teller')">join as teller</button>
+		</div>
     </div>
 </body>
 <style>
@@ -45,7 +52,7 @@
 </style>
 <script>
     let userlist = [];
-    let username = "";
+    var username = "";
 
     let wsAdress = "ws://" + window.location.hostname +  (window.location.port ? ":" + window.location.port : "") + "/ws";
     var gameSocket = null;
@@ -79,11 +86,20 @@
         else if (msg.action == "gamestate") {
             updateGameState(msg.data);
         }
+		else if (msg.action == "join") {
+			if(!msg.data.success) {
+				//TODO set error message
+			}
+		}
     }
     function updateGameState(gamestate) {
         document.getElementById("gamestateLabel").innerText = "game state: " + gamestate.state;
         document.getElementById("guesserLabel").innerText = "guesser: " + gamestate.guesser;
-        document.getElementById("telllersLabel").innerText = "tellers: " + gamestate.tellers.reduce((prev, ele) => prev + "\n" + ele.username, "");
+        document.getElementById("tellersLabel").innerText = "tellers: " + gamestate.tellers.reduce((prev, ele) => prev + "\n" + ele.username, "");
         //todo input logic
     }
+	function joinGame(role) {
+		let msg = {action:"join", username: username, data: {role:role}};
+		gameSocket.send(JSON.stringify(msg));
+	}
 </script>
